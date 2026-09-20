@@ -103,6 +103,24 @@ button.opt.sel{background:var(--accent-soft);border-color:var(--accent)}
 .hero{display:grid;gap:8px;margin-bottom:12px}
 .progbar{height:8px;background:var(--line);border-radius:999px;overflow:hidden;margin:8px 0}
 .progbar i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
+.aimsg{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0;white-space:pre-wrap;word-break:break-word;line-height:1.55}
+.aimsg.u{background:var(--accent-soft);border-color:var(--accent)}
+.aimsg.a{background:var(--surface)}
+.aimsg.err{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.aimsg .who{display:block;font-size:.75rem;color:var(--muted);margin-bottom:4px;font-weight:700}
+.aimsg pre.code{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;overflow-x:auto;white-space:pre}
+.aimsg code{background:var(--bg);padding:1px 4px;border-radius:4px}
+.aimsg .copyb{margin-top:6px;border:1px solid var(--line);background:none;border-radius:8px;padding:4px 10px;font-size:.8rem;color:var(--muted)}
+#aiQ{width:100%;min-height:110px;resize:vertical;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit}
+.aicfg input,.aicfg select{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 8px;font:inherit;width:100%;box-sizing:border-box}
+.aicfg .g{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:8px 0}
+.aicfg label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--muted)}
+.aicfg label.chk{flex-direction:row;align-items:center;gap:8px}
+.aicfg label.chk input{width:auto}
+.aichips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.aichips button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;font-size:.88rem;color:var(--ink);min-height:38px}
+.aichips button:hover{border-color:var(--accent);color:var(--accent)}
+.warnbox{background:var(--warn-soft,var(--bad-soft));border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.85rem;color:var(--muted);margin:8px 0}
 main{padding:16px 0 64px}
 .count{color:var(--muted);font-size:.9rem;margin:0 0 10px}
 .panel[hidden]{display:none}
@@ -179,6 +197,7 @@ td.r,th.r{text-align:right}
       <button class="tab" role="tab" id="t-search" aria-selected="true" data-tab="search">ค้นหา</button>
       <button class="tab" role="tab" id="t-practice" aria-selected="false" data-tab="practice">ฝึกทำ</button>
       <button class="tab" role="tab" id="t-exam" aria-selected="false" data-tab="exam">โหมดสอบ</button>
+      <button class="tab" role="tab" id="t-ai" aria-selected="false" data-tab="ai">ถาม AI</button>
       <button class="tab" role="tab" id="t-marks" aria-selected="false" data-tab="marks">บันทึกไว้ <span id="markCount"></span></button>
       <button class="tab" role="tab" id="t-about" aria-selected="false" data-tab="about">เกี่ยวกับข้อมูล</button>
     </div>
@@ -216,6 +235,7 @@ td.r,th.r{text-align:right}
   </section>
   <section class="panel" id="p-practice" hidden></section>
   <section class="panel" id="p-exam" hidden></section>
+  <section class="panel" id="p-ai" hidden></section>
   <section class="panel" id="p-marks" hidden></section>
   <section class="panel about" id="p-about" hidden></section>
 </main>
@@ -408,7 +428,7 @@ function card(e,re){
     if(e.a&&e.h==='c') notes+=cnote;
     else if(e.a) notes+=`<div class="note quiet">${e.h==='u'?'เฉลยอ่านจากเส้นใต้ตัวเลือกในต้นฉบับ':'เฉลยตามที่พิมพ์ไว้ในต้นฉบับ'}</div>`;
   }
-  const acts='<div class="acts"><button type="button" data-act="copy" data-i="'+e.i+'">📋 คัดลอกข้อความ</button>'+(/^https?:/.test(location.protocol)?'<button type="button" data-act="link" data-i="'+e.i+'">🔗 คัดลอกลิงก์</button>':'')+'</div>';
+  const acts='<div class="acts"><button type="button" data-act="copy" data-i="'+e.i+'">📋 คัดลอกข้อความ</button><button type="button" data-act="ai" data-i="'+e.i+'">🤖 ถาม AI ข้อนี้</button>'+(/^https?:/.test(location.protocol)?'<button type="button" data-act="link" data-i="'+e.i+'">🔗 คัดลอกลิงก์</button>':'')+'</div>';
   let orig='';
   if(IMG_BASE&&e.im&&e.im.length){
     orig='<div class="origs">'+e.im.map(n=>{
@@ -470,6 +490,12 @@ function renderAbout(){
   <li>เมื่อเปิดจากชุดไฟล์ GitHub ตัวอ่านข้อความทำงานในเบราว์เซอร์ของคุณเอง ไม่ต้องล็อกอินและไม่มีการอัปโหลดรูป ครั้งแรกจะโหลดข้อมูลภาษาราว 3 MB แล้วจำไว้ใช้ครั้งต่อไป</li>
   <li>เมื่อเปิดผ่านลิงก์บน Claude จะให้ Claude ถอดข้อความจากรูปแทน (ต้องล็อกอิน และใช้โควตาของผู้ใช้)</li>
   <li>ข้อความที่อ่านได้แก้ไขได้ แล้วค้นหาใหม่ เฉลยที่แสดงมาจากฐานข้อมูลเท่านั้น ถ้าไม่พบข้อที่ตรงกันจะบอกว่าไม่พบ ไม่เดาให้</li></ul>
+  <h2>ถาม AI (เมื่อข้อไม่อยู่ในคลัง)</h2>
+  <ul><li>แท็บ "ถาม AI" ให้ AI ช่วยคิดวิธีทำและตรวจคำตอบ ใช้เป็นตัวช่วยเท่านั้น AI คำนวณผิดได้ ควรเทียบกับเฉลยในคลังและตรวจสูตรเอง</li>
+  <li>เว็บเวอร์ชัน GitHub: แชทในหน้านี้ได้โดยใส่คีย์ฟรีของคุณเอง (Gemini จาก Google AI Studio, OpenRouter โมเดล :free, Groq) คีย์เก็บในเบราว์เซอร์ของคุณเท่านั้น ไม่มีคีย์ของผู้สร้างเว็บอยู่ในไฟล์</li>
+  <li>ไม่อยากใช้คีย์: ปุ่มคัดลอกโจทย์ไปวางใน ChatGPT, Gemini หรือ Claude (แอปแชทฟรี ต้องล็อกอินบัญชีของคุณ) ใช้ได้ทุกเวอร์ชัน</li>
+  <li>เวอร์ชันบนลิงก์ Claude: แชทกับ Claude ในบัญชีของคุณ ใช้โควตาตามแผนของคุณ</li>
+  <li>ระดับฟรีมีจำกัดจำนวนครั้ง และบางผู้ให้บริการอาจนำข้อความไปปรับปรุงผลิตภัณฑ์ อย่าใส่ข้อมูลส่วนตัว</li></ul>
   <h2>โหมดสอบจำลองและสถิติ</h2>
   <ul><li>แท็บ "โหมดสอบ" สุ่มข้อที่มีเฉลยยืนยันแล้ว ตั้งจำนวนข้อและเวลาได้ จบแล้วสรุปคะแนนรายวิชาและแสดงข้อที่ผิด ข้อที่ผิดจะถูกจำไว้ให้ฝึกซ้ำ</li>
   <li>สถิติและข้อที่เคยผิดเก็บในเบราว์เซอร์เครื่องนั้นเท่านั้น ไม่ส่งไปที่ไหน</li>
@@ -575,7 +601,7 @@ function renderPhoto(items,url,engine){
   items.slice(0,3).forEach((it,idx)=>{
     const sec=document.createElement('div'); sec.style.marginTop=idx?'16px':'0';
     sec.innerHTML=`<p class="sc">${items.length>1?`ข้อที่ ${idx+1} ในรูป · `:''}ข้อความที่อ่านได้ (แก้ไขได้ถ้าอ่านผิด)</p><textarea aria-label="ข้อความที่อ่านจากรูป"></textarea>
-    <div class="row" style="margin-top:8px"><button class="primary" type="button" data-rematch>ค้นหาใหม่จากข้อความนี้</button></div><div data-res style="margin-top:12px"></div>`;
+    <div class="row" style="margin-top:8px"><button class="primary" type="button" data-rematch>ค้นหาใหม่จากข้อความนี้</button><button class="ghost" type="button" data-askai>🤖 ถาม AI ข้อนี้</button></div><div data-res style="margin-top:12px"></div>`;
     body.appendChild(sec);
     const ta=sec.querySelector('textarea'); ta.value=itemText(it);
     const doMatch=()=>{
@@ -587,7 +613,7 @@ function renderPhoto(items,url,engine){
       h+=m.map(([sc,s1,e])=>`<p class="sc">ความตรงกับข้อความที่อ่านได้ ${Math.round(s1*100)}%</p>`+card(e,null)).join('');
       box.innerHTML=h;
     };
-    sec.querySelector('[data-rematch]').onclick=doMatch; doMatch();
+    sec.querySelector('[data-rematch]').onclick=doMatch; sec.querySelector('[data-askai]').onclick=()=>askAI(ta.value,LASTFILE); doMatch();
   });
 }
 $('#camBtn').addEventListener('click',()=>$('#camFile').click());
@@ -817,12 +843,195 @@ function renderExamResult(ok,n,secs,per,timeUp){
   $('#exWrongOnly').onclick=()=>{ renderExamSetup(); const c=$('#exWrong'); if(c){c.checked=true;c.dispatchEvent(new Event('change'));} };
 }
 
+
+/* ================= AI helper (ask AI) ================= */
+const AI_DIRECT='1'==='1';
+const AIKEY='kw-ai-v1';
+const AISYS='คุณเป็นติวเตอร์วิศวกรรมโยธาสำหรับผู้เตรียมสอบใบอนุญาตประกอบวิชาชีพวิศวกรรมควบคุม (กว.) ของไทย ตอบเป็นภาษาไทย อธิบายทีละขั้นตอนอย่างกระชับ แสดงสูตร การแทนค่าและหน่วยให้ครบ ใช้มาตรฐานที่โจทย์ระบุ (เช่น ว.ส.ท. วิธีหน่วยแรงใช้งาน WSD หรือวิธีกำลัง USD) ถ้าโจทย์อ้างถึงรูปหรือกราฟที่ไม่เห็น หรือข้อมูลไม่พอ ให้บอกชัดเจนและระบุสมมติฐานที่ใช้ ถ้ามีตัวเลือกให้สรุปว่าตอบข้อไหนและบอกระดับความมั่นใจ ถ้าไม่มั่นใจให้บอกตรงๆ ห้ามเดา ถ้าข้อมูลในหัวข้อ "ข้อใกล้เคียงในคลัง" มีเงื่อนไขต่างจากโจทย์จริง อย่าลอกคำตอบมาใช้ตรงๆ';
+const AI={msgs:[],img:null,busy:false,ctl:null,cfg:Object.assign({provider:'gemini',base:'',model:'',key:'',remember:false},LS.get(AIKEY,{})),models:[]};
+function aiSaveCfg(){ const c=Object.assign({},AI.cfg); if(!c.remember) c.key=''; LS.set(AIKEY,c); }
+function mdLite(s){
+  let h=esc(s);
+  h=h.replace(/```([\s\S]*?)```/g,(m,c)=>'<pre class="code">'+c.replace(/^[a-z]*\n/,'')+'</pre>');
+  h=h.replace(/`([^`\n]+)`/g,'<code>$1</code>');
+  h=h.replace(/\*\*([^*\n]+)\*\*/g,'<b>$1</b>');
+  h=h.replace(/^#{1,4}\s*(.+)$/gm,'<b>$1</b>');
+  return h;
+}
+function aiCtx(q){
+  let m=[]; try{m=matchText(q);}catch(e){}
+  const near=m.filter(x=>x[1]>=0.35).slice(0,2); if(!near.length) return '';
+  return 'ข้อใกล้เคียงในคลัง (ใช้เป็นแนวทางเท่านั้น ตรวจเงื่อนไขให้ตรงกับโจทย์จริงก่อน):\n'+near.map(([sc,s1,e],k)=>(k+1)+') '+plainText(e)+(e.h==='c'?'\n(เฉลยข้อนี้ Claude คำนวณเอง ไม่ใช่เฉลยต้นฉบับ)':'')).join('\n\n');
+}
+function aiPromptText(q){ const c=aiCtx(q); return AISYS+'\n\n=== โจทย์ ===\n'+q+(c?'\n\n=== '+c:''); }
+function aiEngine(){ if(AI_DIRECT) return AI.cfg.provider==='claude'&&SAMPLE?'claude':(AI.cfg.provider==='claude'?'gemini':AI.cfg.provider); return SAMPLE?'claude':null; }
+function aiEndpoint(){
+  const p=AI.cfg.provider;
+  if(p==='gemini') return {kind:'gemini'};
+  if(p==='openrouter') return {kind:'oai',base:'https://openrouter.ai/api/v1'};
+  if(p==='groq') return {kind:'oai',base:'https://api.groq.com/openai/v1'};
+  return {kind:'oai',base:(AI.cfg.base||'').replace(/\/+$/,'')};
+}
+function aiErrMsg(status,body){
+  if(status===401||status===403) return 'คีย์ไม่ถูกต้อง หมดอายุ หรือไม่มีสิทธิ์ใช้บริการนี้ (Gemini: ต้องเป็นคีย์ที่สร้างใน Google AI Studio และอยู่ในภูมิภาคที่รองรับ)';
+  if(status===429) return 'ใช้เกินโควตาฟรีของผู้ให้บริการแล้ว รอสักครู่หรือลองใหม่วันพรุ่งนี้ หรือเปลี่ยนโมเดล/ผู้ให้บริการ';
+  if(status===404) return 'ไม่พบโมเดลนี้ ลองกด "โหลดรายชื่อโมเดล" แล้วเลือกใหม่';
+  if(status===400) return 'ผู้ให้บริการปฏิเสธคำขอ (อาจเพราะโมเดลนี้อ่านรูปไม่ได้ หรือข้อความยาวเกินไป) '+(body?String(body).slice(0,160):'');
+  return 'ผู้ให้บริการตอบกลับผิดปกติ (รหัส '+status+') '+(body?String(body).slice(0,160):'');
+}
+async function aiFetch(url,opt){
+  let r; try{ r=await fetch(url,opt); }catch(e){ const er=new Error('net'); er.code='net'; throw er; }
+  if(!r.ok){ let b=''; try{b=await r.text();}catch(e){} const er=new Error('http'); er.code='http'; er.status=r.status; er.body=b; throw er; }
+  return r.json();
+}
+async function aiLoadModels(){
+  const ep=aiEndpoint(), key=AI.cfg.key; const st=$('#aiCfgMsg'); st.textContent='กำลังโหลด…';
+  try{
+    let ids=[];
+    if(ep.kind==='gemini'){
+      const j=await aiFetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200',{headers:{'x-goog-api-key':key}});
+      ids=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes('generateContent')).map(m=>String(m.name).replace(/^models\//,''));
+      const bad=/image|tts|audio|live|embed|imagen|veo|lyria|robotics|native|computer-use/i;
+      const rank=id=>/flash/i.test(id)&&!/lite/i.test(id)&&!bad.test(id)?0:/flash/i.test(id)&&!bad.test(id)?1:bad.test(id)?3:2;
+      ids.sort((a,b)=>rank(a)-rank(b)||a.localeCompare(b));
+    }else{
+      const j=await aiFetch(ep.base+'/models',{headers:key?{Authorization:'Bearer '+key}:{}});
+      ids=(j.data||[]).map(m=>m.id); const fr=id=>/:free$/.test(id)?0:1; if(AI.cfg.provider==='openrouter') ids.sort((a,b)=>fr(a)-fr(b)||a.localeCompare(b));
+    }
+    AI.models=ids; $('#aiModels').innerHTML=ids.slice(0,400).map(i=>'<option value="'+esc(i)+'">').join('');
+    if(!AI.cfg.model||!ids.includes(AI.cfg.model)){ AI.cfg.model=ids[0]||''; $('#aiModel').value=AI.cfg.model; aiSaveCfg(); }
+    st.textContent='โหลดรายชื่อโมเดลแล้ว '+ids.length+' รายการ'+(AI.cfg.provider==='openrouter'?' (โมเดลที่ลงท้าย :free คือระดับฟรี)':'');
+  }catch(e){ st.textContent=e.code==='net'?'เชื่อมต่อไม่ได้ (เบราว์เซอร์อาจถูกบล็อกโดย CORS หรือภูมิภาค) ลองผู้ให้บริการอื่น หรือใช้ปุ่มคัดลอกไปแชทเว็บ':aiErrMsg(e.status,e.body); }
+}
+function fileToDataURL(file,maxSide){
+  return new Promise(async res=>{
+    try{
+      const im=await fileToImage(file); let w=im.naturalWidth,h=im.naturalHeight; if(!w||!h) throw 0;
+      const sc=Math.min(1,maxSide/Math.max(w,h)); const cv=document.createElement('canvas'); cv.width=Math.round(w*sc); cv.height=Math.round(h*sc);
+      const cx=cv.getContext('2d'); if(!cx) throw 0; cx.drawImage(im,0,0,cv.width,cv.height); res(cv.toDataURL('image/jpeg',0.85));
+    }catch(e){ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=()=>res(null); fr.readAsDataURL(file); }
+  });
+}
+async function aiCall(hist,ctl,onText){
+  const eng=aiEngine();
+  if(eng==='claude'){
+    const turns=[{role:'user',content:AISYS+'\n\n(บทสนทนาต่อเนื่อง ตอบตามคำแนะนำข้างต้น)'},{role:'assistant',content:'รับทราบ'}].concat(hist.map(m=>({role:m.role,content:m.text})));
+    const last=[...hist].reverse().find(m=>m.img);
+    const opts={signal:ctl.signal,cache:false,onText:t=>onText(t.text)}; if(last&&last.img) opts.images=last.img;
+    const r=await SAMPLE(turns,opts); return r.text||'';
+  }
+  const ep=aiEndpoint(), key=AI.cfg.key, model=AI.cfg.model;
+  if(!key&&ep.kind==='gemini') { const er=new Error('nokey'); er.code='nokey'; throw er; }
+  if(!model){ const er=new Error('nomodel'); er.code='nomodel'; throw er; }
+  if(ep.kind==='gemini'){
+    const contents=[];
+    for(const m of hist){ const parts=[{text:m.text}]; if(m.img){ const d=await fileToDataURL(m.img,1600); if(d){ const mm=/^data:([^;]+);base64,(.*)$/.exec(d); if(mm) parts.push({inlineData:{mimeType:mm[1],data:mm[2]}}); } } contents.push({role:m.role==='assistant'?'model':'user',parts}); }
+    const j=await aiFetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify({systemInstruction:{parts:[{text:AISYS}]},contents,generationConfig:{temperature:0.2}}),signal:ctl.signal});
+    const c=j.candidates&&j.candidates[0]; const t=c&&c.content&&c.content.parts?c.content.parts.map(p=>p.text||'').join(''):'';
+    if(!t){ const er=new Error('empty'); er.code='empty'; er.detail=(j.promptFeedback&&j.promptFeedback.blockReason)||(c&&c.finishReason)||''; throw er; }
+    return t;
+  }
+  if(!ep.base){ const er=new Error('nobase'); er.code='nobase'; throw er; }
+  const messages=[{role:'system',content:AISYS}];
+  for(const m of hist){ if(m.img){ const d=await fileToDataURL(m.img,1600); messages.push({role:m.role,content:[{type:'text',text:m.text}].concat(d?[{type:'image_url',image_url:{url:d}}]:[])}); } else messages.push({role:m.role,content:m.text}); }
+  const j=await aiFetch(ep.base+'/chat/completions',{method:'POST',headers:Object.assign({'Content-Type':'application/json'},key?{Authorization:'Bearer '+key}:{}),body:JSON.stringify({model,messages,temperature:0.2}),signal:ctl.signal});
+  const t=j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content; if(!t){ const er=new Error('empty'); er.code='empty'; throw er; } return t;
+}
+function aiRenderLog(streamText){
+  const box=$('#aiLog'); if(!box) return;
+  let h=AI.msgs.map((m,i)=>'<div class="aimsg '+(m.role==='user'?'u':m.err?'err':'a')+'"><span class="who">'+(m.role==='user'?'คุณ':(m.err?'ข้อผิดพลาด':'AI'))+'</span>'+(m.role==='user'?esc(m.disp||m.text)+(m.img?'<br><i>(แนบรูป)</i>':''):mdLite(m.text))+(m.role==='assistant'&&!m.err?'<br><button class="copyb" type="button" data-aicopy="'+i+'">คัดลอกคำตอบ</button>':'')+'</div>').join('');
+  if(AI.busy) h+='<div class="aimsg a"><span class="who">AI</span>'+(streamText?mdLite(streamText):'<span class="spin"></span>กำลังคิด…')+'</div>';
+  box.innerHTML=h;
+}
+async function aiSend(){
+  if(AI.busy) return; const q=$('#aiQ').value.trim(); if(!q&&!AI.img) return;
+  const eng=aiEngine(); if(!eng){ toast('ยังไม่ได้ตั้งค่าแชท ใช้ปุ่มคัดลอกไปแชทเว็บด้านล่างได้'); return; }
+  const ctx=$('#aiCtx').checked?aiCtx(q):''; const text=(q||'(ดูรูปที่แนบ)')+(ctx?'\n\n=== '+ctx:'');
+  AI.msgs.push({role:'user',text,disp:q,img:AI.img}); AI.img=null; $('#aiQ').value=''; $('#aiImgName').textContent='';
+  AI.busy=true; AI.ctl=new AbortController(); aiRenderLog(); $('#aiSend').disabled=true; $('#aiStop').hidden=false;
+  const hist=AI.msgs.filter(m=>!m.err).slice(-9);
+  try{
+    const out=await aiCall(hist,AI.ctl,t=>aiRenderLog(t));
+    AI.msgs.push({role:'assistant',text:out});
+  }catch(e){
+    let m;
+    if(e&&e.code==='cancelled'||e&&e.name==='AbortError') m='หยุดการตอบแล้ว';
+    else if(e&&e.code==='nokey') m='ยังไม่ได้ใส่คีย์ ใส่คีย์ในหัวข้อ "ตั้งค่าแชท" ก่อน';
+    else if(e&&e.code==='nomodel') m='ยังไม่ได้เลือกโมเดล กด "โหลดรายชื่อโมเดล" แล้วเลือก';
+    else if(e&&e.code==='nobase') m='ยังไม่ได้ใส่ที่อยู่ API (Base URL)';
+    else if(e&&e.code==='net') m='เชื่อมต่อผู้ให้บริการไม่ได้ (อาจถูกบล็อกโดย CORS/ภูมิภาค หรืออินเทอร์เน็ตมีปัญหา) ลองผู้ให้บริการอื่น หรือใช้ปุ่มคัดลอกไปแชทเว็บ';
+    else if(e&&e.code==='empty') m='AI ไม่ตอบข้อความกลับมา'+(e.detail?' ('+e.detail+')':'')+' ลองถามใหม่หรือเปลี่ยนโมเดล';
+    else if(e&&e.code==='http') m=aiErrMsg(e.status,e.body);
+    else if(e&&e.code==='not_granted') m='คุณไม่ได้อนุญาตให้ใช้ Claude ในหน้านี้';
+    else if(e&&e.code==='rate_limited') m='ใช้ Claude ถี่เกินไป รอสักครู่แล้วลองใหม่';
+    else m=(e&&e.message)||'เกิดข้อผิดพลาด';
+    AI.msgs.push({role:'assistant',text:m,err:true});
+  }finally{ AI.busy=false; AI.ctl=null; $('#aiSend').disabled=false; $('#aiStop').hidden=true; aiRenderLog(); const b=$('#aiLog'); if(b) b.scrollIntoView({block:'end'}); }
+}
+function aiOpenWeb(url){
+  const q=$('#aiQ').value.trim(); if(!q){ toast('พิมพ์หรือวางโจทย์ในช่องก่อน'); return; }
+  copyText(aiPromptText(q)).then(ok=>{ toast(ok?'คัดลอกโจทย์แล้ว วางในช่องแชท (Ctrl+V หรือกดค้างแล้ววาง)':'คัดลอกไม่สำเร็จ ให้เลือกข้อความเองแล้วคัดลอก'); try{window.open(url,'_blank','noopener');}catch(e){} });
+}
+function renderAI(){
+  const box=$('#p-ai'); const eng=aiEngine(); const c=AI.cfg;
+  let h='<div class="card"><h2 style="margin:0 0 4px;font-size:1.1rem">ถาม AI (เมื่อข้อไม่อยู่ในคลัง)</h2>';
+  h+='<p class="count" style="margin:0">ให้ AI ช่วยคิดวิธีทำและตรวจคำตอบ ใช้เป็นตัวช่วยเท่านั้น <b>AI คำนวณผิดได้</b> ควรเทียบกับเฉลยในคลังและตรวจสูตรเองทุกครั้ง อย่าใส่ข้อมูลส่วนตัวในแชท</p>';
+  if(AI_DIRECT){
+    h+='<details class="aicfg" id="aiCfg"'+(c.key||eng==='claude'?'':' open')+'><summary style="cursor:pointer;color:var(--accent);font-weight:600;margin-top:10px">ตั้งค่าแชทในหน้านี้ (ใช้คีย์ฟรีของคุณเอง)</summary>';
+    h+='<div class="warnbox">คีย์ถูกเก็บในเบราว์เซอร์ของคุณเท่านั้น (ไม่อยู่ในไฟล์เว็บและไม่ส่งให้ใครนอกจากผู้ให้บริการที่เลือก) อย่าใช้เครื่องสาธารณะ ระดับฟรีของผู้ให้บริการมีจำกัดจำนวนครั้ง และบางเจ้าอาจนำข้อความไปปรับปรุงผลิตภัณฑ์ ตรวจเงื่อนไขล่าสุดก่อนใช้</div>';
+    h+='<div class="g"><label>ผู้ให้บริการ<select id="aiProv"><option value="gemini">Google Gemini (คีย์ฟรีจาก AI Studio)</option><option value="openrouter">OpenRouter (โมเดล :free)</option><option value="groq">Groq (ระดับฟรี)</option><option value="custom">อื่น ๆ ที่เข้ากันได้กับ OpenAI</option></select></label>';
+    h+='<label id="aiBaseW" hidden>Base URL<input id="aiBase" placeholder="https://.../v1" autocomplete="off"></label>';
+    h+='<label>API key<input id="aiKey" type="password" autocomplete="off" placeholder="วางคีย์ที่นี่"></label>';
+    h+='<label>โมเดล<input id="aiModel" list="aiModels" autocomplete="off" placeholder="กด โหลดรายชื่อโมเดล"><datalist id="aiModels"></datalist></label></div>';
+    h+='<label class="chk"><input type="checkbox" id="aiRem"> จำคีย์ไว้ในเบราว์เซอร์เครื่องนี้ (ไม่ติ๊ก = ลืมเมื่อปิดหน้า)</label>';
+    h+='<div class="row" style="margin-top:8px"><button class="ghost" id="aiLoad" type="button">โหลดรายชื่อโมเดล</button><button class="ghost" id="aiForget" type="button">ลบคีย์</button></div><p class="count" id="aiCfgMsg" style="margin:6px 0 0"></p>';
+    h+='<p class="count" style="margin:8px 0 0">ขอคีย์ Gemini ฟรี: aistudio.google.com (คีย์ที่สร้างใน AI Studio ใช้ได้ทันที บางประเทศหรือบางโปรเจกต์อาจได้โควตา 0 ถ้าเจอให้ลองผู้ให้บริการอื่น) · OpenRouter: openrouter.ai · Groq: console.groq.com</p></details>';
+  }else if(SAMPLE){
+    h+='<div class="warnbox" style="margin-top:10px">แชทนี้ใช้ Claude ในบัญชีของคุณ (ต้องล็อกอิน และใช้โควตาตามแผนของคุณ ผู้ใช้แผนฟรีมีจำนวนจำกัด) ครั้งแรกจะมีหน้าต่างขอสิทธิ์</div>';
+  }else{
+    h+='<div class="warnbox" style="margin-top:10px">หน้านี้ยังแชทกับ AI โดยตรงไม่ได้ ใช้ปุ่ม "คัดลอกโจทย์ไปวางใน…" ด้านล่างเพื่อเปิดแอปแชทฟรีของ ChatGPT, Gemini หรือ Claude แล้ววางโจทย์ที่เตรียมให้ หรือเปิดเว็บเวอร์ชัน GitHub เพื่อใช้แชทในหน้านี้</div>';
+  }
+  h+='<label style="display:block;margin-top:12px;font-weight:600">โจทย์หรือคำถาม</label><textarea id="aiQ" placeholder="วางโจทย์ (พร้อมตัวเลือก) หรือพิมพ์คำถาม เช่น ช่วยอธิบายวิธีหา As ของคานรูปตัว T"></textarea>';
+  h+='<div class="row" style="margin-top:8px;align-items:center"><label class="chk" style="display:flex;gap:6px;align-items:center;font-size:.88rem;color:var(--muted)"><input type="checkbox" id="aiCtx" checked> แนบข้อใกล้เคียงจากคลังให้ AI ดู</label>';
+  h+='<button class="ghost" id="aiAttach" type="button">📎 แนบรูป</button><span class="count" id="aiImgName" style="margin:0"></span><input type="file" id="aiFile" accept="image/*" hidden></div>';
+  h+='<div class="row" style="margin-top:8px"><button class="primary" id="aiSend" type="button"'+(eng?'':' disabled')+'>ส่งให้ AI</button><button class="ghost" id="aiStop" type="button" hidden>หยุด</button><button class="ghost" id="aiClear" type="button">ล้างแชท</button></div>';
+  h+='<div class="aichips"><button type="button" data-web="https://chatgpt.com/">คัดลอกโจทย์ไปวางใน ChatGPT</button><button type="button" data-web="https://gemini.google.com/app">…ใน Gemini</button><button type="button" data-web="https://claude.ai/new">…ใน Claude</button></div>';
+  h+='<p class="count" style="margin:6px 0 0">ปุ่มด้านบนคัดลอกโจทย์พร้อมคำแนะนำให้ AI แล้วเปิดแอปแชทฟรี (ต้องล็อกอินบัญชีของคุณเอง) ไม่ต้องใช้คีย์</p></div><div id="aiLog"></div>';
+  box.innerHTML=h;
+  if(AI_DIRECT){
+    $('#aiProv').value=c.provider==='claude'?'gemini':c.provider; $('#aiBase').value=c.base||''; $('#aiKey').value=c.key||''; $('#aiModel').value=c.model||''; $('#aiRem').checked=!!c.remember; $('#aiBaseW').hidden=c.provider!=='custom';
+    $('#aiProv').onchange=()=>{ AI.cfg.provider=$('#aiProv').value; AI.cfg.model=''; $('#aiModel').value=''; $('#aiBaseW').hidden=AI.cfg.provider!=='custom'; aiSaveCfg(); };
+    $('#aiBase').onchange=()=>{AI.cfg.base=$('#aiBase').value.trim(); aiSaveCfg();};
+    $('#aiKey').onchange=()=>{AI.cfg.key=$('#aiKey').value.trim(); aiSaveCfg();};
+    $('#aiModel').onchange=()=>{AI.cfg.model=$('#aiModel').value.trim(); aiSaveCfg();};
+    $('#aiRem').onchange=()=>{AI.cfg.remember=$('#aiRem').checked; aiSaveCfg();};
+    $('#aiLoad').onclick=()=>{AI.cfg.key=$('#aiKey').value.trim(); AI.cfg.base=$('#aiBase').value.trim(); aiLoadModels();};
+    $('#aiForget').onclick=()=>{AI.cfg.key=''; $('#aiKey').value=''; AI.cfg.remember=false; $('#aiRem').checked=false; aiSaveCfg(); toast('ลบคีย์แล้ว');};
+  }
+  $('#aiSend').onclick=aiSend; $('#aiStop').onclick=()=>{ if(AI.ctl) AI.ctl.abort(); };
+  $('#aiClear').onclick=()=>{ if(AI.ctl) AI.ctl.abort(); AI.msgs=[]; AI.img=null; $('#aiImgName').textContent=''; aiRenderLog(); };
+  $('#aiAttach').onclick=()=>$('#aiFile').click();
+  $('#aiFile').onchange=ev=>{ const f=ev.target.files&&ev.target.files[0]; ev.target.value=''; if(f){ if(!/^image\//.test(f.type)){toast('ไฟล์นี้ไม่ใช่รูปภาพ');return;} AI.img=f; $('#aiImgName').textContent='แนบแล้ว: '+f.name; } };
+  box.querySelectorAll('[data-web]').forEach(b=>b.onclick=()=>aiOpenWeb(b.dataset.web));
+  $('#aiQ').addEventListener('keydown',ev=>{ if((ev.ctrlKey||ev.metaKey)&&ev.key==='Enter'){ ev.preventDefault(); aiSend(); } });
+  aiRenderLog();
+}
+document.addEventListener('click',ev=>{
+  const b=ev.target.closest('[data-aicopy]'); if(b){ const m=AI.msgs[+b.dataset.aicopy]; if(m) copyText(m.text).then(ok=>toast(ok?'คัดลอกคำตอบแล้ว':'คัดลอกไม่สำเร็จ')); return; }
+  const a=ev.target.closest('[data-act="ai"]'); if(a){ const e=E[+a.dataset.i]; if(e) askAI(plainText(e)+'\n\nช่วยอธิบายวิธีคิดข้อนี้ทีละขั้น และตรวจว่าเฉลยที่ให้ไว้ถูกหรือไม่'); }
+});
+function askAI(text,imgFile){
+  switchTab('ai'); const ta=$('#aiQ'); if(ta){ ta.value=text; ta.focus(); }
+  if(imgFile){ AI.img=imgFile; const n=$('#aiImgName'); if(n) n.textContent='แนบแล้ว: '+(imgFile.name||'รูปโจทย์'); }
+}
+function aiInit(){ renderAI(); }
+
 /* ---------- tabs ---------- */
 let tab='search';
 function switchTab(name){
   tab=name;
   document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x.dataset.tab===name));
-  ['search','practice','exam','marks','about'].forEach(k=>$('#p-'+k).hidden=(k!==name));
+  ['search','practice','exam','ai','marks','about'].forEach(k=>$('#p-'+k).hidden=(k!==name));
   $('#filters').hidden=!(name==='search'||name==='practice');
   $('#searchRow').hidden=$('#searchOpts').hidden=(name!=='search');
   $('#practiceOpts').hidden=(name!=='practice');
@@ -832,7 +1041,7 @@ function switchTab(name){
   window.scrollTo({top:0});
 }
 document.querySelector('.tabs').addEventListener('click',ev=>{const b=ev.target.closest('.tab'); if(b) switchTab(b.dataset.tab);});
-init().then(()=>{initCam();initExtras();openShared();});
+init().then(async()=>{await initCam();initExtras();aiInit();openShared();});
 </script>
 </body>
 </html>
